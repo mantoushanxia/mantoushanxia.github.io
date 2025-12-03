@@ -1,156 +1,117 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
-    <title>扫码移车系统 - 车牌查询</title>
+// load-manager.js - 加载管理器
+(function() {
+    const scriptsToLoad = [
+        { src: 'data.js', priority: 1 },
+        { src: 'css.js', priority: 2 },
+        { src: 'query.js', priority: 3 }
+    ];
     
-    <!-- 按顺序加载脚本 -->
-    <script src="data.js" charset="UTF-8"></script>
-    <script src="css.js" charset="UTF-8"></script>
-    <script src="query.js" charset="UTF-8"></script>
-</head>
-<body>
-    <main class="card">
-        <h1 class="title">扫码移车系统</h1>
-        <p class="subtitle">输入车牌号查询车主联系方式</p>
-        
-        <div class="input-section">
-            <div class="input-group">
-                <input type="text" 
-                       id="plateInput" 
-                       class="plate-input" 
-                       placeholder="请输入车牌号，如：A123B4" 
-                       maxlength="10"
-                       autofocus>
-                <button type="button" class="btn-query" onclick="queryPhoneNumber()">查询</button>
-            </div>
-            <p class="hint">提示：请输入完整的车牌号，系统不区分大小写</p>
-            
-            <div class="error-message" id="errorMessage">
-                未找到该车牌号，请检查输入是否正确
-            </div>
-            
-            <div class="sample-plates">
-                <div class="sample-title">示例车牌：</div>
-                <div class="sample-list" id="sampleList">
-                    <!-- 示例车牌将由query.js动态生成 -->
-                </div>
-            </div>
-        </div>
-        
-        <div class="result-section" id="resultSection">
-            <div class="result-title">查询结果</div>
-            <div class="license-plate" id="resultPlate"></div>
-            <p class="subtitle">临时停车对您造成的不便深表歉意，请拨打电话</p>
-            
-            <nav class="contact-group" id="contactGroup">
-                <!-- 电话按钮将由query.js动态生成 -->
-            </nav>
-        </div>
-        
-        <div class="footer-links">
-            <a href="javascript:void(0);" class="footer-link" onclick="alert('如需添加或修改车辆信息，请联系管理员。')">管理车辆信息</a>
-            <a href="javascript:void(0);" class="footer-link" onclick="alert('本系统用于临时停车时联系车主移车，请勿滥用。')">使用说明</a>
-            <p class="info-text">拨打电话前请确认车牌号，并礼貌沟通</p>
-        </div>
-    </main>
+    let loadedCount = 0;
+    let totalScripts = scriptsToLoad.length;
     
-    <script>
-        // 查询函数 - 调用query.js中的功能
-        function queryPhoneNumber() {
-            const plateInput = document.getElementById('plateInput');
-            const plate = plateInput.value.trim().toUpperCase();
-            
-            if (!plate) {
-                showError('请输入车牌号');
+    function loadScript(scriptInfo, callback) {
+        const script = document.createElement('script');
+        script.src = scriptInfo.src;
+        script.charset = 'UTF-8';
+        
+        script.onload = function() {
+            console.log(`✅ ${scriptInfo.src} 加载成功`);
+            loadedCount++;
+            if (callback) callback();
+        };
+        
+        script.onerror = function() {
+            console.error(`❌ ${scriptInfo.src} 加载失败`);
+            loadedCount++;
+            if (callback) callback();
+        };
+        
+        document.head.appendChild(script);
+    }
+    
+    function loadAllScripts() {
+        // 按优先级排序
+        scriptsToLoad.sort((a, b) => a.priority - b.priority);
+        
+        // 创建加载进度指示器
+        createLoadingIndicator();
+        
+        // 顺序加载脚本
+        function loadNext(index) {
+            if (index >= scriptsToLoad.length) {
+                console.log('🎉 所有脚本加载完成');
+                removeLoadingIndicator();
                 return;
             }
             
-            // 调用query.js中的查询功能
-            if (typeof window.queryPhoneNumbers === 'function') {
-                const phoneNumbers = window.queryPhoneNumbers(plate);
-                displayResults(plate, phoneNumbers);
-            } else {
-                showError('查询功能未正确加载，请刷新页面重试');
-            }
-        }
-        
-        // 显示查询结果
-        function displayResults(plate, phoneNumbers) {
-            const errorMessage = document.getElementById('errorMessage');
-            const resultSection = document.getElementById('resultSection');
-            const resultPlate = document.getElementById('resultPlate');
-            const contactGroup = document.getElementById('contactGroup');
-            
-            // 隐藏错误信息
-            errorMessage.style.display = 'none';
-            
-            if (!phoneNumbers || phoneNumbers[0] === '电话未登记') {
-                showError('未找到该车牌号，请检查输入是否正确');
-                resultSection.style.display = 'none';
-                return;
-            }
-            
-            // 显示查询结果
-            resultPlate.textContent = plate;
-            
-            // 清空并重新生成电话按钮
-            contactGroup.innerHTML = '';
-            phoneNumbers.forEach((phone, index) => {
-                const phoneLink = document.createElement('a');
-                phoneLink.href = `tel:${phone}`;
-                phoneLink.className = 'btn-call';
-                phoneLink.textContent = phoneNumbers.length > 1 
-                    ? `📞 拨打车主电话 ${index + 1} (${phone})` 
-                    : `📞 拨打车主电话 (${phone})`;
-                
-                contactGroup.appendChild(phoneLink);
+            loadScript(scriptsToLoad[index], function() {
+                // 延迟 100ms 加载下一个脚本，确保执行顺序
+                setTimeout(() => {
+                    loadNext(index + 1);
+                }, 100);
             });
-            
-            // 显示结果区域
-            resultSection.style.display = 'block';
-            
-            // 滚动到结果区域
-            resultSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
         
-        // 显示错误信息
-        function showError(message) {
-            const errorMessage = document.getElementById('errorMessage');
-            errorMessage.textContent = message;
-            errorMessage.style.display = 'block';
-            errorMessage.style.animation = 'none';
+        // 开始加载
+        setTimeout(() => {
+            loadNext(0);
+        }, 300); // 初始延迟
+    }
+    
+    function createLoadingIndicator() {
+        const indicator = document.createElement('div');
+        indicator.id = 'loading-indicator';
+        indicator.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: #f0f0f0;
+            z-index: 9999;
+        `;
+        
+        const progressBar = document.createElement('div');
+        progressBar.id = 'loading-progress';
+        progressBar.style.cssText = `
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(to right, #007AFF, #00C6FF);
+            transition: width 0.3s ease;
+        `;
+        
+        indicator.appendChild(progressBar);
+        document.body.appendChild(indicator);
+        
+        // 更新进度
+        const progressInterval = setInterval(() => {
+            const progress = (loadedCount / totalScripts) * 100;
+            progressBar.style.width = progress + '%';
+            
+            if (progress >= 100) {
+                clearInterval(progressInterval);
+            }
+        }, 100);
+    }
+    
+    function removeLoadingIndicator() {
+        const indicator = document.getElementById('loading-indicator');
+        if (indicator) {
+            // 淡出动画
+            indicator.style.opacity = '0';
+            indicator.style.transition = 'opacity 0.5s ease';
             setTimeout(() => {
-                errorMessage.style.animation = 'shake 0.5s ease';
-            }, 10);
+                if (indicator.parentNode) {
+                    indicator.parentNode.removeChild(indicator);
+                }
+            }, 500);
         }
-        
-        // 按Enter键触发查询
-        document.getElementById('plateInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                queryPhoneNumber();
-            }
-        });
-        
-        // 页面加载完成后初始化示例车牌
-        document.addEventListener('DOMContentLoaded', function() {
-            if (typeof phoneData !== 'undefined') {
-                const sampleList = document.getElementById('sampleList');
-                const samplePlates = Object.keys(phoneData).slice(0, 4); // 取前4个车牌作为示例
-                
-                samplePlates.forEach(plate => {
-                    const span = document.createElement('span');
-                    span.className = 'sample-plate';
-                    span.textContent = plate;
-                    span.onclick = function() {
-                        document.getElementById('plateInput').value = plate;
-                        queryPhoneNumber();
-                    };
-                    sampleList.appendChild(span);
-                });
-            }
-        });
-    </script>
-</body>
-</html>
+    }
+    
+    // 页面加载后开始加载脚本
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', loadAllScripts);
+    } else {
+        loadAllScripts();
+    }
+})();
