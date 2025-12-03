@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>驾驶员二维码打印 - A4排版</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3a0ca3;
+            --accent: #f72585;
+            --light: #f8f9fa;
+            --dark: #212529;
+        }
+        
+        /* 打印样式 */
+        @media print {
+            body {
+                margin: 0;
+                padding: 0;
+                background-color: white;
+                font-family: 'Noto Sans SC', sans-serif;
+            }
+            
+            .print-controls {
+                display: none;
+            }
+            
+            .a4-page {
+                width: 210mm;
+                height: 297mm;
+                page-break-after: always;
+                margin: 0;
+                padding: 15mm;
+                box-sizing: border-box;
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                grid-template-rows: 1fr 1fr;
+                gap: 15mm;
+                position: relative;
+            }
+            
+            .qr-card {
+                width: 100%;
+                height: 100%;
+                background: white;
+                border-radius: 12px;
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+                overflow: hidden;
+                display: flex;
+                flex-direction: column;
+            }
+        }
+        
+        /* 屏幕预览样式 */
+        @media screen {
+            body {
+                font-family: 'Noto Sans SC', sans-serif;
+                background: linear-gradient(135deg, #f3f4f6 0%, #e5e9f2 100%);
+                min-height: 100vh;
+                padding: 20px;
+                margin: 0;
+            }
+            
+            .print-controls {
+                text-align: center;
+                margin-bottom: 30px;
+                padding: 20px;
+                background: white;
+                border-radius: 16px;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+                max-width: 800px;
+                margin: 0 auto 30px;
+            }
+            
+            .print-button {
+                display: inline-block;
+                padding: 14px 32px;
+                background: linear-gradient(135deg, var(--primary), var(--secondary));
+                color: white;
+                border: none;
+                border-radius: 10px;
+                font-size: 16px;
+                font-weight: 600;
+                cursor: pointer;
+                box-shadow: 0 6px 20px rgba(67, 97, 238, 0.3);
+                transition: all 0.3s ease;
+            }
+            
+            .print-button:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 10px 25px rgba(67, 97, 238, 0.4);
+            }
+            
+            .print-tips {
+                margin-top: 15px;
+                color: #666;
+                font-size: 14px;
+            }
+            
+            .a4-page {
+                width: 210mm;
+                height: 297mm;
+                margin: 20px auto;
+                padding: 15mm;
+                background-color: white;
+                box-shadow: 0 15px 50px rgba(0, 0, 0, 0.15);
+                border-radius: 8px;
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                grid-template-rows: 1fr 1fr;
+                gap: 15mm;
+                box-sizing: border-box;
+                position: relative;
+            }
+            
+            .qr-card {
+                width: 100%;
+                height: 100%;
+                background: white;
+                border-radius: 12px;
+                box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+                overflow: hidden;
+                display: flex;
+                flex-direction: column;
+                transition: transform 0.3s ease;
+            }
+            
+            .qr-card:hover {
+                transform: translateY(-5px);
+            }
+        }
+        
+        /* 二维码卡片通用样式 */
+        .card-header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            padding: 16px;
+            color: white;
+            text-align: center;
+            flex-shrink: 0;
+        }
+        
+        .card-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 4px;
+            letter-spacing: 0.5px;
+        }
+        
+        .card-subtitle {
+            font-size: 12px;
+            opacity: 0.9;
+            font-weight: 500;
+        }
+        
+        .qr-section {
+            padding: 20px;
+            text-align: center;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .qr-frame {
+            width: 140px;
+            height: 140px;
+            margin: 0 auto;
+            padding: 12px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(67, 97, 238, 0.12);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            position: relative;
+        }
+        
+        .qr-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 6px;
+        }
+        
+        .corner {
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            border: 3px solid var(--accent);
+            z-index: 2;
+        }
+        
+        .corner-1 { top: 0; left: 0; border-right: none; border-bottom: none; border-radius: 8px 0 0 0; }
+        .corner-2 { top: 0; right: 0; border-left: none; border-bottom: none; border-radius: 0 8px 0 0; }
+        .corner-3 { bottom: 0; left: 0; border-right: none; border-top: none; border-radius: 0 0 0 8px; }
+        .corner-4 { bottom: 0; right: 0; border-left: none; border-top: none; border-radius: 0 0 8px 0; }
+        
+        .driver-info {
+            margin-top: 15px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            color: #495057;
+            font-size: 13px;
+            border-left: 3px solid var(--accent);
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        .driver-name {
+            font-weight: 600;
+            color: var(--secondary);
+        }
+        
+        /* 页面指示器 */
+        .page-indicator {
+            position: absolute;
+            bottom: 5mm;
+            right: 5mm;
+            color: #999;
+            font-size: 12px;
+            font-family: monospace;
+        }
+        
+        /* 图片加载失败提示 */
+        .image-error {
+            width: 140px;
+            height: 140px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: #ffebee;
+            border-radius: 8px;
+            color: #d32f2f;
+            text-align: center;
+            border: 2px dashed #f44336;
+        }
+        
+        .image-error-icon {
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+        
+        .image-error-text {
+            font-size: 11px;
+            line-height: 1.3;
+        }
+        
+        /* 文件结构提示 */
+        .file-structure {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px auto;
+            max-width: 500px;
+            font-family: monospace;
+            font-size: 13px;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <div class="print-controls">
+        <h2 style="color: var(--secondary); margin-bottom: 15px;">📱 驾驶员二维码打印系统</h2>
+        <p style="color: #666; margin-bottom: 20px;">每张A4纸打印4个二维码，共3页</p>
+        
+        <div class="file-structure">
+            <strong>文件结构要求：</strong><br>
+            当前文件夹/<br>
+            ├── <span style="color: var(--primary);">本HTML文件</span><br>
+            └── <span style="color: var(--secondary);">callcarimg/</span> (图片目录)<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;├── jianxunxiongdi.png<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;├── konglingyong.png<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;└── ...其他10个文件
+        </div>
+        
+        <button class="print-button" onclick="window.print()">🖨️ 打印二维码</button>
+        <p class="print-tips">建议打印设置：A4纸张 | 横向布局 | 默认页边距</p>
+    </div>
+    
+    <!-- 第一张A4纸 -->
+    <div class="a4-page">
+        <span class="page-indicator">第1页/共3页</span>
+        
+        <!-- 左上角 -->
+        <div class="qr-card">
+            <div class="card-header">
+                <div class="card-title">扫码联系车主移车</div>
+                <div class="card-subtitle">请使用手机扫描二维码</div>
+            </div>
+            <div class="qr-section">
+                <div class="qr-frame">
+                    <div class="corner corner-1"></div>
+                    <div class="corner corner-2"></div>
+                    <div class="corner corner-3"></div>
+                    <div class="corner corner-4"></div>
+                    <img src="callcarimg/jianxunxiongdi.png" alt="移车二维码" class="qr-image" onerror="handleImageError(this)">
+                </div>
+                <div class="driver-info">
+                    驾驶员：<span class="driver-name">jianxunxiong</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 右上角 -->
+        <div class="qr-card">
+            <div class="card-header">
+                <div class="card-title">扫码联系车主移车</div>
+                <div class="card-subtitle">请使用手机扫描二维码</div>
+            </div>
+            <div class="qr-section">
+                <div class="qr-frame">
+                    <div class="corner corner-1"></div>
+                    <div class="corner corner-2"></div>
+                    <div class="corner corner-3"></div>
+                    <div class="corner corner-4"></div>
+                    <img src="callcarimg/konglingyong.png" alt="移车二维码" class="qr-image" onerror="handleImageError(this)">
+                </div>
+                <div class="driver-info">
+                    驾驶员：<span class="driver-name">konglingyong</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 左下角 -->
+        <div class="qr-card">
+            <div class="card-header">
+                <div class="card-title">扫码联系车主移车</div>
+                <div class="card-subtitle">请使用手机扫描二维码</div>
+            </div>
+            <div class="qr-section">
+                <div class="qr-frame">
+                    <div class="corner corner-1"></div>
+                    <div class="corner corner-2"></div>
+                    <div class="corner corner-3"></div>
+                    <div class="corner corner-4"></div>
+                    <img src="callcarimg/zhanglianzhu.png" alt="移车二维码" class="qr-image" onerror="handleImageError(this)">
+                </div>
+                <div class="driver-info">
+                    驾驶员：<span class="driver-name">zhanglianzhu</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 右下角 -->
+        <div class="qr-card">
+            <div class="card-header">
+                <div class="card-title">扫码联系车主移车</div>
+                <div class="card-subtitle">请使用手机扫描二维码</div>
+            </div>
+            <div class="qr-section">
+                <div class="qr-frame">
+                    <div class="corner corner-1"></div>
+                    <div class="corner corner-2"></div>
+                    <div class="corner corner-3"></div>
+                    <div class="corner corner-4"></div>
+                    <img src="callcarimg/wangzhenyu.png" alt="移车二维码" class="qr-image" onerror="handleImageError(this)">
+                </div>
+                <div class="driver-info">
+                    驾驶员：<span class="driver-name">wangzhenyu</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 第二张A4纸 -->
+    <div class="a4-page">
+        <span class="page-indicator">第2页/共3页</span>
+        
+        <!-- 左上角 -->
+        <div class="qr-card">
+            <div class="card-header">
+                <div class="card-title">扫码联系车主移车</div>
+                <div class="card-subtitle">请使用手机扫描二维码</div>
+            </div>
+            <div class="qr-section">
+                <div class="qr-frame">
+                    <div class="corner corner-1"></div>
+                    <div class="corner corner-2"></div>
+                    <div class="corner corner-3"></div>
+                    <div class="corner corner-4"></div>
+                    <img src="callcarimg/wangximing.png" alt="移车二维码" class="qr-image" onerror="handleImageError(this)">
+                </div>
+                <div class="driver-info">
+                    驾驶员：<span class="driver-name">wangximing</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 右上角 -->
+        <div class="qr-card">
+            <div class="card-header">
+                <div class="card-title">扫码联系车主移车</div>
+                <div class="card-subtitle">请使用手机扫描二维码</div>
+            </div>
+            <div class="qr-section">
+                <div class="qr-frame">
+                    <div class="corner corner-1"></div>
+                    <div class="corner corner-2"></div>
+                    <div class="corner corner-3"></div>
+                    <div class="corner corner-4"></div>
+                    <img src="callcarimg/shizhijun.png" alt="移车二维码" class="qr-image" onerror="handleImageError(this)">
+                </div>
+                <div class="driver-info">
+                    驾驶员：<span class="driver-name">shizhijun</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 左下角 -->
+        <div class="qr-card">
+            <div class="card-header">
+                <div class="card-title">扫码联系车主移车</div>
+                <div class="card-subtitle">请使用手机扫描二维码</div>
+            </div>
+            <div class="qr-section">
+                <div class="qr-frame">
+                    <div class="corner corner-1"></div>
+                    <div class="corner corner-2"></div>
+                    <div class="corner corner-3"></div>
+                    <div class="corner corner-4"></div>
+                    <img src="callcarimg/liuzongzhen.png" alt="移车二维码" class="qr-image" onerror="handleImageError(this)">
+                </div>
+                <div class="driver-info">
+                    驾驶员：<span class="driver-name">liuzongzhen</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 右下角 -->
+        <div class="qr-card">
+            <div class="card-header">
+                <div class="card-title">扫码联系车主移车</div>
+                <div class="card-subtitle">请使用手机扫描二维码</div>
+            </div>
+            <div class="qr-section">
+                <div class="qr-frame">
+                    <div class="corner corner-1"></div>
+                    <div class="corner corner-2"></div>
+                    <div class="corner corner-3"></div>
+                    <div class="corner corner-4"></div>
+                    <img src="callcarimg/bixiuying.png" alt="移车二维码" class="qr-image" onerror="handleImageError(this)">
+                </div>
+                <div class="driver-info">
+                    驾驶员：<span class="driver-name">bixiuying</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 第三张A4纸 -->
+    <div class="a4-page">
+        <span class="page-indicator">第3页/共3页</span>
+        
+        <!-- 左上角 -->
+        <div class="qr-card">
+            <div class="card-header">
+                <div class="card-title">扫码联系车主移车</div>
+                <div class="card-subtitle">请使用手机扫描二维码</div>
+            </div>
+            <div class="qr-section">
+                <div class="qr-frame">
+                    <div class="corner corner-1"></div>
+                    <div class="corner corner-2"></div>
+                    <div class="corner corner-3"></div>
+                    <div class="corner corner-4"></div>
+                    <img src="callcarimg/zhangying.png" alt="移车二维码" class="qr-image" onerror="handleImageError(this)">
+                </div>
+                <div class="driver-info">
+                    驾驶员：<span class="driver-name">zhangying</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 右上角 -->
+        <div class="qr-card">
+            <div class="card-header">
+                <div class="card-title">扫码联系车主移车</div>
+                <div class="card-subtitle">请使用手机扫描二维码</div>
+            </div>
+            <div class="qr-section">
+                <div class="qr-frame">
+                    <div class="corner corner-1"></div>
+                    <div class="corner corner-2"></div>
+                    <div class="corner corner-3"></div>
+                    <div class="corner corner-4"></div>
+                    <img src="callcarimg/fangzheng.png" alt="移车二维码" class="qr-image" onerror="handleImageError(this)">
+                </div>
+                <div class="driver-info">
+                    驾驶员：<span class="driver-name">fangzheng</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 左下角 -->
+        <div class="qr-card">
+            <div class="card-header">
+                <div class="card-title">扫码联系车主移车</div>
+                <div class="card-subtitle">请使用手机扫描二维码</div>
+            </div>
+            <div class="qr-section">
+                <div class="qr-frame">
+                    <div class="corner corner-1"></div>
+                    <div class="corner corner-2"></div>
+                    <div class="corner corner-3"></div>
+                    <div class="corner corner-4"></div>
+                    <img src="callcarimg/lijianxun.png" alt="移车二维码" class="qr-image" onerror="handleImageError(this)">
+                </div>
+                <div class="driver-info">
+                    驾驶员：<span class="driver-name">lijianxun</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 右下角 -->
+        <div class="qr-card">
+            <div class="card-header">
+                <div class="card-title">扫码联系车主移车</div>
+                <div class="card-subtitle">请使用手机扫描二维码</div>
+            </div>
+            <div class="qr-section">
+                <div class="qr-frame">
+                    <div class="corner corner-1"></div>
+                    <div class="corner corner-2"></div>
+                    <div class="corner corner-3"></div>
+                    <div class="corner corner-4"></div>
+                    <img src="callcarimg/konghualin.png" alt="移车二维码" class="qr-image" onerror="handleImageError(this)">
+                </div>
+                <div class="driver-info">
+                    驾驶员：<span class="driver-name">konghualin</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 图片加载错误处理函数
+        function handleImageError(img) {
+            console.warn('图片加载失败:', img.src);
+            
+            const qrFrame = img.parentNode;
+            const placeholder = document.createElement('div');
+            placeholder.className = 'image-error';
+            placeholder.innerHTML = `
+                <div class="image-error-icon">⚠️</div>
+                <div class="image-error-text">
+                    图片未找到<br>
+                    <small>${img.src.split('/').pop()}</small>
+                </div>
+            `;
+            
+            qrFrame.replaceChild(placeholder, img);
+        }
+        
+        // 页面加载完成后检查图片状态
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('页面加载完成，开始检查图片...');
+            
+            const images = document.querySelectorAll('.qr-image');
+            let loadedCount = 0;
+            const totalCount = images.length;
+            
+            // 预加载所有图片并检查状态
+            images.forEach(img => {
+                const testImg = new Image();
+                
+                testImg.onload = function() {
+                    loadedCount++;
+                    console.log(`✅ 图片加载成功: ${img.src.split('/').pop()}`);
+                    
+                    if (loadedCount === totalCount) {
+                        console.log(`🎉 所有 ${totalCount} 张图片加载成功！`);
+                    }
+                };
+                
+                testImg.onerror = function() {
+                    console.warn(`❌ 图片加载失败: ${img.src.split('/').pop()}`);
+                    
+                    // 如果主图片也加载失败，显示错误
+                    if (!img.complete || img.naturalHeight === 0) {
+                        handleImageError(img);
+                    }
+                };
+                
+                testImg.src = img.src;
+            });
+            
+            // 打印前提示
+            window.onbeforeprint = function() {
+                const errorCount = document.querySelectorAll('.image-error').length;
+                if (errorCount > 0) {
+                    const continuePrint = confirm(`发现 ${errorCount} 张图片未加载，是否继续打印？`);
+                    if (!continuePrint) {
+                        return false;
+                    }
+                }
+                
+                alert('打印设置建议：\n\n📄 纸张大小：A4\n🔄 方向：横向\n📏 页边距：默认\n🔍 缩放：100%');
+                return true;
+            };
+            
+            // 显示加载状态
+            setTimeout(() => {
+                const loaded = document.querySelectorAll('.qr-image[complete]').length;
+                console.log(`当前加载状态：${loaded}/${totalCount} 张图片`);
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
