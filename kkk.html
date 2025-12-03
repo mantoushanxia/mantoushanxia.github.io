@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <!-- 1. 先加载数据 -->
+    <script src="data.js" defer></script>
+    <!-- 2. 再加载查询逻辑 -->
+    <script src="query.js" defer></script>
+    
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>扫码移车系统</title>
+
+    <style>
+        /* ========== 基础样式 ========== */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #f0f8ff 0%, #e6f7ff 100%);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            padding: 20px;
+        }
+        
+        /* ========== 主卡片 ========== */
+        .card {
+            padding: 2.5rem;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 122, 255, 0.1);
+            max-width: 520px;
+            width: 100%;
+            text-align: center;
+            border: 1px solid rgba(0, 122, 255, 0.1);
+        }
+        
+        /* ========== 标题 ========== */
+        .title {
+            color: #1a3650;
+            font-size: 1.9rem;
+            margin-bottom: 1rem;
+            line-height: 1.3;
+            font-weight: 700;
+        }
+        
+        .subtitle {
+            color: #666;
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+            font-weight: 400;
+        }
+        
+        /* ========== 查询区域 ========== */
+        .query-container {
+            margin: 2rem 0;
+            padding: 1.5rem;
+            background: #f8fafc;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s;
+        }
+        
+        .query-container:focus-within {
+            border-color: #007AFF;
+            box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+        }
+        
+        .query-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        
+        #car-id-input {
+            flex: 1;
+            padding: 15px 18px;
+            border: 2px solid #cbd5e0;
+            border-radius: 10px;
+            font-size: 1.05rem;
+            transition: all 0.3s;
+            background: white;
+            font-weight: 500;
+        }
+        
+        #car-id-input:focus {
+            border-color: #007AFF;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.15);
+        }
+        
+        #query-btn {
+            padding: 15px 28px;
+            background: linear-gradient(135deg, #007AFF 0%, #0056cc 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1.05rem;
+            font-weight: 600;
+            transition: all 0.3s;
+            white-space: nowrap;
+            min-width: 120px;
+        }
+        
+        #query-btn:hover {
+            background: linear-gradient(135deg, #0056cc 0%, #004099 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 122, 255, 0.25);
+        }
+        
+        #query-btn:active {
+            transform: translateY(0);
+        }
+        
+        /* ========== ID显示区域 ========== */
+        .id-display {
+            text-align: center;
+            color: #475569;
+            font-size: 0.95rem;
+            padding: 14px 16px;
+            background: linear-gradient(135deg, #e8f4ff 0%, #d4edff 100%);
+            border-radius: 8px;
+            border-left: 5px solid #007AFF;
+            margin-top: 15px;
+            font-weight: 500;
+        }
+        
+        .id-display strong {
+            color: #1e40af;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+        
+        /* ========== 电话按钮 ========== */
+        .contact-group {
+            margin: 2rem 0;
+        }
+        
+        .btn-call {
+            display: block;
+            padding: 1.2rem;
+            margin: 1rem 0;
+            background: linear-gradient(135deg, #007AFF 0%, #0056cc 100%);
+            color: white !important;
+            text-decoration: none;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            font-size: 1.15rem;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+        }
+        
+        .btn-call:hover {
+            background: linear-gradient(135deg, #0056cc 0%, #004099 100%);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 122, 255, 0.3);
+        }
+        
+        .btn-call:active {
+            transform: translateY(-1px);
+        }
+        
+        /* ========== 状态指示器 ========== */
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-online { background: #10b981; }
+        .status-offline { background: #ef4444; }
+        
+        /* ========== 移动端适配 ========== */
+        @media (max-width: 480px) {
+            body { padding: 15px; }
+            .card { padding: 1.8rem; }
+            .title { font-size: 1.6rem; }
+            .subtitle { font-size: 1rem; }
+            .query-box { flex-direction: column; }
+            #query-btn { width: 100%; }
+            .btn-call { padding: 1rem; font-size: 1.05rem; }
+            .query-container { padding: 1.2rem; }
+        }
+        
+        /* ========== 动画效果 ========== */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        /* ========== 工具类 ========== */
+        .hidden { display: none !important; }
+        .text-muted { color: #94a3b8; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+    <main class="card fade-in">
+        <!-- 标题区域 -->
+        <div class="header">
+            <h1 class="title">🚗 扫码移车系统</h1>
+            <div class="subtitle">输入车辆ID查询联系电话 • 实时更新</div>
+        </div>
+        
+        <!-- 查询区域 -->
+        <div class="query-container">
+            <div class="query-box">
+                <input type="text" 
+                       id="car-id-input" 
+                       placeholder="输入车辆ID (如: A696G1)"
+                       autocomplete="off"
+                       autocapitalize="characters"
+                       spellcheck="false">
+                <button id="query-btn">查询</button>
+            </div>
+            
+            <!-- 自动补全建议 -->
+            <div id="suggestions" class="hidden" style="text-align: left; margin-top: 8px;">
+                <small class="text-muted">建议: </small>
+                <div id="suggestion-list"></div>
+            </div>
+            
+            <!-- 当前车辆显示 -->
+            <div id="current-id-display" class="id-display">
+                <span class="status-indicator status-online"></span>
+                系统就绪，请输入车辆ID
+            </div>
+            
+            <!-- 车辆详情 -->
+            <div id="vehicle-details" class="hidden" style="margin-top: 15px; text-align: left;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span class="text-muted">车主:</span>
+                    <span id="detail-owner" style="font-weight: 500;"></span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span class="text-muted">车辆:</span>
+                    <span id="detail-vehicle" style="font-weight: 500;"></span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 电话按钮区域 -->
+        <nav class="contact-group">
+            <a href="#" id="phone-link-1" class="btn-call">
+                <span style="font-size: 1.2em;">📱</span>
+                <span id="phone-text-1">车主电话 1</span>
+            </a>
+            
+            <a href="#" id="phone-link-2" class="btn-call">
+                <span style="font-size: 1.2em;">📞</span>
+                <span id="phone-text-2">车主电话 2</span>
+            </a>
+        </nav>
+        
+        <!-- 系统状态 -->
+        <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid #e2e8f0;">
+            <div class="text-muted" style="display: flex; justify-content: space-between; font-size: 0.85rem;">
+                <span>🔄 数据库版本: <span id="db-version">1.0</span></span>
+                <span>📊 车辆总数: <span id="vehicle-count">0</span></span>
+                <span>👁️ 今日查询: <span id="query-count">0</span></span>
+            </div>
+        </div>
+    </main>
+</body>
+</html>
