@@ -1,0 +1,138 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const adLink = document.querySelector('a[href*="3v.do"]');
+    if(adLink) {
+        const adContainer = adLink.closest('p');
+        if(adContainer && adContainer.previousElementSibling?.tagName === 'DIV') {
+            adContainer.previousElementSibling.remove();
+            adContainer.remove();
+        }
+    }
+});
+</script>
+    <meta charset="UTF-8">
+    <!-- 移动端视口设置 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    
+    <!-- 移除冗余JS，直接设置title -->
+    <title>扫码移车系统</title>
+
+    <style>
+        /* 1. 重置默认样式 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box; /* 现代盒模型 */
+        }
+
+        /* 2. 全屏弹性布局 */
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #f0f8ff;
+            font-family: system-ui, -apple-system, sans-serif; /* 系统字体 */
+        }
+
+        /* 3. 主内容卡片容器 */
+        .card {
+            padding: 2rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            max-width: 600px;
+            width: 90%;
+            text-align: center;
+        }
+
+        /* 4. 标题样式优化 */
+        .title {
+            color: #1a3650;
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            line-height: 1.4;
+        }
+
+        /* 5. 电话链接按钮 */
+        .btn-call {
+            display: block;
+            padding: 1rem;
+            margin: 1rem 0;
+            background: #007AFF;
+            color: white !important;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: transform 0.2s ease; /* 动效优化 */
+            font-size: 1.1rem;
+        }
+
+        /* 6. 按钮交互反馈 */
+        .btn-call:active {
+            transform: scale(0.98); /* 点击反馈 */
+        }
+
+        /* 7. 底部链接样式 */
+        .footer-link {
+            display: inline-block;
+            margin-top: 1.5rem;
+            color: #007AFF;
+            text-decoration: none;
+            position: relative;
+        }
+
+        /* 8. 链接悬停下划线动画 */
+        .footer-link::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0;
+            height: 1px;
+            background: #007AFF;
+            transition: width 0.3s ease;
+        }
+
+        .footer-link:hover::after {
+            width: 100%;
+        }
+
+        /* 9. 移动端适配 */
+        @media (max-width: 480px) {
+            .card {
+                padding: 1.5rem;
+                margin: 1rem;
+            }
+            
+            .title {
+                font-size: 1.5rem;
+            }
+            
+            .btn-call {
+                padding: 0.9rem;
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 10. 语义化主内容区域 -->
+    <main class="card">
+        <!-- 11. 标题层级优化 -->
+        <h1 class="title">
+            临时停车对您造成的不便
+            <div class="subtitle">深表歉意，请拨打电话</div>
+        </h1>
+
+        <!-- 12. 电话操作区域 -->
+        <nav class="contact-group">
+            <a href="tel:13280012899" class="btn-call">📞 拨打车主电话 1</a>
+        </nav>
+
+        <!-- 13. 底部辅助链接 -->
+   </main>
+</body>
+</html>
