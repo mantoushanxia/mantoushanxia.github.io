@@ -314,19 +314,15 @@ body {
 }
 `;
 
-// 动态创建并插入样式
-function loadCSS() {
+// 立即执行函数，立即加载样式
+(function() {
     const style = document.createElement('style');
     style.textContent = cssContent;
     document.head.appendChild(style);
-}
-
-// 页面加载时自动应用样式
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', loadCSS);
-} else {
-    loadCSS();
-}
+    
+    // 标记样式已加载
+    window.cssLoaded = true;
+})();
 
 // 导出样式内容以便其他文件使用
 window.scanCarCSS = cssContent;
